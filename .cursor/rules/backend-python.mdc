@@ -1,0 +1,109 @@
+---
+description: Python/FastAPI backend conventions
+globs: ["backend/**/*.py", "backend/**/*.toml", "backend/**/requirements*.txt"]
+---
+
+# Backend Python Rules
+
+## Tech Stack
+- Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2.0 (async)
+- Package manager: uv (preferred) or pip
+- Formatter: ruff format | Linter: ruff check
+
+## Project Structure
+```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI app entry, mount routers
+│   ├── core/
+│   │   ├── config.py        # Settings via pydantic-settings
+│   │   ├── deps.py          # Dependency injection (get_db, get_current_user)
+│   │   ├── security.py      # JWT / auth helpers
+│   │   ├── exceptions.py    # Custom exception classes
+│   │   └── logging.py       # Structured logging setup
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       └── users.py     # Router: /api/v1/users
+│   ├── models/
+│   │   └── user.py          # SQLAlchemy ORM models
+│   ├── schemas/
+│   │   └── user.py          # Pydantic request/response schemas
+│   └── services/
+│       └── user_service.py  # Business logic, called by routers
+├── tests/
+│   ├── conftest.py
+│   ├── unit/                 # Unit tests (isolated)
+│   ├── integration/          # DB interaction tests
+│   └── api/                  # Endpoint tests
+├── alembic/                  # DB migrations
+├── pyproject.toml
+└── requirements.txt
+```
+
+## Naming Conventions
+- Files: `snake_case` (e.g. `pod_repository.py`)
+- Classes: `PascalCase` (e.g. `PodRepository`)
+- Functions/methods: `snake_case` (e.g. `get_pod_by_id`)
+- Constants: `UPPER_SNAKE_CASE` (e.g. `DEFAULT_STATUS`)
+
+## Coding Conventions
+- Follow PEP8 strictly
+- Use Python 3.12+ syntax features and best practices
+- Balance OOP and functional paradigms — pick whichever is clearer
+- Use type hints on ALL functions, parameters, and return values
+- Write Google-style docstrings for public functions and classes
+- No unnecessary private methods — prefer readability
+- If not needed, don't over-abstract; simple and direct is better
+- Separate routers (api/) → business logic (services/) → DB models (models/)
+- Use dependency injection (`Depends()`) for db sessions, auth, etc.
+- Config via environment variables, loaded through `pydantic-settings`
+
+## Async Programming (MANDATORY)
+- ALL I/O operations: must use `async/await`
+- Database: async drivers + connection pooling (`asyncpg`)
+- HTTP requests: async HTTP client (`httpx.AsyncClient`)
+- External service calls: always async
+- NEVER use synchronous blocking calls in async context
+
+## Security
+- Guard against: memory leaks, circular references, recursion overflow, deadlocks
+- All user input must be validated through Pydantic before processing
+- SQL queries through ORM only — no raw string interpolation
+- Secrets via env vars, never hardcoded
+
+## API Design
+- RESTful: `GET /api/v1/users`, `POST /api/v1/users`, etc.
+- Proper HTTP status codes (201 create, 204 delete, 422 validation error)
+- All endpoints return typed Pydantic models (never raw dicts)
+- Pagination: `limit` + `offset` query params
+
+## Error Handling
+- **Validation errors**: Pydantic handles request validation
+- **Database errors**: Handle async connection issues and constraint violations
+- **HTTP errors**: Handle async HTTP request failures with proper retries
+- **Business logic errors**: Raise custom exceptions from `core/exceptions.py`
+- **Logging**: Use structured logging (JSON format) via `core/logging.py`
+- Global exception handler middleware for unexpected errors
+
+## Database
+- Async SQLAlchemy sessions via `async_sessionmaker`
+- Alembic for migrations; never modify DB schema by hand
+- Migration naming: `YYYY_MM_DD_HHMM_description.py`
+
+## Testing
+- **Unit tests**: Isolate and test individual services/utils
+- **Integration tests**: Test async database interactions
+- **API tests**: Test endpoints end-to-end via `httpx.AsyncClient`
+- Use `pytest-asyncio` for all async tests
+- Use factories/fixtures for test data, not hardcoded values
+- Mirror main project structure in `tests/` directory
+- Each test function tests ONE behavior
+- Naming: `test_[feature]_[scenario]_[expected_result]`
+
+## OpenAPI
+- FastAPI auto-generates `/openapi.json` — this is the contract with frontend
+- Keep Pydantic schemas well-documented: use `Field(description=...)`
+- Run `scripts/sync-api-types.sh` after changing any schema

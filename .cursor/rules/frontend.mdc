@@ -1,0 +1,137 @@
+---
+description: Next.js frontend conventions — code should be readable by backend engineers
+globs: ["frontend/**/*.ts", "frontend/**/*.tsx", "frontend/**/*.css", "frontend/**/*.json"]
+---
+
+# Frontend Rules
+
+> Goal: Write frontend code that a backend engineer can understand and review.
+
+## Tech Stack
+- Next.js 15 (App Router), TypeScript strict mode, Tailwind CSS v4, shadcn/ui
+- Data fetching: TanStack Query (React Query)
+- Forms: react-hook-form + zod validation
+- State: React context / zustand (only if needed)
+
+## Project Structure
+```
+frontend/
+├── src/
+│   ├── app/                  # Next.js App Router pages
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── (auth)/
+│   │       └── login/page.tsx
+│   ├── components/
+│   │   ├── ui/               # shadcn/ui components (auto-generated)
+│   │   └── [feature]/        # feature-specific components
+│   ├── lib/
+│   │   ├── api.ts            # API client (fetch wrapper)
+│   │   ├── api-types.ts      # AUTO-GENERATED from OpenAPI — DO NOT EDIT
+│   │   └── utils.ts
+│   ├── hooks/                # Custom React hooks
+│   ├── styles/
+│   │   └── globals.css
+│   └── types/                # App-level type definitions
+├── public/
+├── package.json
+└── tsconfig.json
+```
+
+## Component Documentation (IMPORTANT)
+Every component file MUST have a header comment:
+```typescript
+/**
+ * UserProfile - 用户资料展示组件
+ *
+ * 功能：展示用户基本信息，支持编辑和保存
+ * 数据流：从父组件接收 userId → 调用 /api/users/:id → 展示数据
+ * 交互：点击编辑 → 编辑模式 → 保存 → 触发 onUpdate 回调
+ */
+```
+For complex features, add a data flow summary:
+```
+数据流：用户输入 → formData → handleSave() → API → 更新 state → onUpdate()
+```
+
+## Component Structure Order
+Every component follows this order:
+1. Props type definition
+2. Component header comment (as above)
+3. State declarations (with purpose comments)
+4. API calls / data fetching
+5. Side effects (`useEffect`)
+6. Event handlers (prefix with `handle`)
+7. Helper functions
+8. Render logic
+
+## State Annotations
+Always annotate the purpose and source of state:
+```typescript
+const [isOpen, setIsOpen] = useState(false);              // UI state: dialog visibility
+const { data: user } = useQuery(["user", id], fetchUser); // Server state: from /api/users/:id
+const [formData, setFormData] = useState(initialValues);   // Form state: temp editing data
+```
+
+## Coding Conventions
+- All components: functional + hooks, no class components
+- Named exports only (no `export default` except page files)
+- Co-locate component + types + tests in same directory
+- Use `"use client"` only when client interactivity is needed
+- Components under 200 lines; extract hooks/utils if longer
+- Event handler naming: `handleXxx` (e.g. `handleSave`, `handleDelete`)
+
+## Styling
+- Tailwind CSS only — no CSS modules, no styled-components, no inline styles
+- Use shadcn/ui as base; customize via Tailwind classes
+- Color scheme: CSS variables in globals.css
+- Responsive: mobile-first (`sm:`, `md:`, `lg:`)
+- Implement accessibility (ARIA labels, keyboard navigation)
+
+## Data Fetching
+- ALL API calls go through `lib/api.ts`
+- Use types from `lib/api-types.ts` (auto-generated, never hand-edit)
+- Server components fetch directly; client components use TanStack Query
+- Show loading (skeleton) and error states for all async operations
+
+## Forms & Validation
+- Zod schemas mirroring backend Pydantic models
+- react-hook-form for form state management
+- Inline validation errors next to each field
+- Type-safe form data handling
+
+## Performance
+- Use `next/image` for all images
+- Lazy load heavy components with `dynamic()` or `React.lazy()`
+- Minimize `"use client"` — keep as much on server as possible
+- Explain WHY when using `memo` / `useMemo` / `useCallback`
+- Large lists: use virtual scrolling
+
+## Business Logic Comments
+Mark non-obvious business rules explicitly:
+```typescript
+// 业务规则：只有管理员可以删除用户
+if (currentUser.role !== "admin") return;
+```
+Explain non-obvious design decisions:
+```typescript
+// 使用 debounce 防止搜索 API 被频繁调用（每次按键都会触发）
+const debouncedSearch = useMemo(() => debounce(handleSearch, 300), []);
+```
+
+## Self-Review Checklist (run after completing a component)
+Agent must be able to answer these 8 questions:
+1. 这个组件的业务功能是什么？（文件头注释）
+2. 用户如何与它交互？（事件处理函数）
+3. 调用了哪些 API？（lib/api.ts）
+4. 数据从哪来，到哪去？（状态标注）
+5. 有没有错误处理？（try-catch / error boundary）
+6. 类型定义是否完整？（禁止 any）
+7. 有没有性能问题？（不必要的重渲染）
+8. 是否符合业务规则？（权限、边界条件）
+
+## DO NOT
+- Manually write types that exist in `api-types.ts`
+- Install new UI libraries without asking (shadcn/ui covers most needs)
+- Use `any` — use `unknown` + type narrowing if truly unknown
+- Leave unused imports

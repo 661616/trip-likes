@@ -1,0 +1,23 @@
+#!/bin/bash
+# Git pre-commit hook: lint + format check before every commit
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Backend checks (only if backend files changed)
+BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend/' | head -1)
+if [ -n "$BACKEND_CHANGED" ]; then
+    echo "  → Backend: ruff check"
+    cd backend && ruff check . && ruff format --check .
+    cd ..
+fi
+
+# Frontend checks (only if frontend files changed)
+FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
+if [ -n "$FRONTEND_CHANGED" ]; then
+    echo "  → Frontend: lint + typecheck"
+    cd frontend && npm run lint && npm run typecheck
+    cd ..
+fi
+
+echo "✅ Pre-commit checks passed"

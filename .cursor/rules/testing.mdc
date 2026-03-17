@@ -1,0 +1,56 @@
+---
+description: Testing conventions for both frontend and backend
+globs: ["**/*.test.*", "**/*.spec.*", "**/test_*", "**/conftest.py", "**/tests/**"]
+---
+
+# Testing Rules
+
+## Philosophy
+- Tests verify BEHAVIOR, not implementation details
+- Each test tests ONE thing — name it clearly
+- Test the happy path first, then edge cases, then error cases
+
+## Backend (pytest)
+- Location: `backend/tests/`
+- Use `httpx.AsyncClient` to test API endpoints end-to-end
+- Use `conftest.py` for shared fixtures (db session, test client, auth headers)
+- Test data: use factory functions, not hardcoded dicts
+- Naming: `test_[feature]_[scenario]_[expected_result]`
+  e.g. `test_create_user_with_duplicate_email_returns_409`
+
+```python
+# Pattern
+async def test_create_user_success(client: AsyncClient):
+    response = await client.post("/api/v1/users", json={"email": "a@b.com", "name": "Test"})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == "a@b.com"
+```
+
+## Frontend (vitest + testing-library)
+- Location: co-located with component (`Button.test.tsx` next to `Button.tsx`)
+- Use `@testing-library/react` for component tests
+- Use `msw` (Mock Service Worker) to mock API calls — never mock fetch directly
+- Test user interactions, not internal state
+
+```typescript
+// Pattern
+it("shows error when login fails", async () => {
+  server.use(http.post("/api/v1/auth/login", () => HttpResponse.json({ detail: "Bad credentials" }, { status: 401 })));
+  render(<LoginForm />);
+  await userEvent.type(screen.getByLabelText("Email"), "test@test.com");
+  await userEvent.click(screen.getByRole("button", { name: "Login" }));
+  expect(await screen.findByText("Bad credentials")).toBeInTheDocument();
+});
+```
+
+## When to Write Tests
+- After implementing any API endpoint (backend)
+- After implementing any form or user flow (frontend)
+- When fixing a bug — write a failing test first, then fix
+- Agent should run tests after completing a module and before suggesting commit
+
+## When NOT to Write Tests
+- Pure UI styling (no logic)
+- Auto-generated code (api-types.ts)
+- One-off scripts

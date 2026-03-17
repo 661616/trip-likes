@@ -1,0 +1,48 @@
+---
+description: CI/CD and deployment conventions
+globs: [".github/**", "docker-compose*", "Dockerfile*", "Makefile", "scripts/**"]
+---
+
+# CI/CD Rules
+
+## Local Development
+- Use `docker-compose.yml` for local multi-service setup (db, redis, etc.)
+- Backend: `uvicorn app.main:app --reload --port 8000`
+- Frontend: `npm run dev` (Next.js dev server, port 3000)
+- One command to start everything: `make dev` or `docker compose up`
+
+## Docker
+- Each service has its own Dockerfile
+- Use multi-stage builds (builder → runner) to minimize image size
+- Never copy `.env` or secrets into Docker images
+- Pin base image versions (`python:3.12-slim`, not `python:latest`)
+
+## GitHub Actions CI Pipeline
+```yaml
+# Suggested .github/workflows/ci.yml structure:
+# on: [push, pull_request]
+# jobs:
+#   backend-lint:    ruff check backend/
+#   backend-test:    pytest backend/tests/
+#   frontend-lint:   npm run lint (in frontend/)
+#   frontend-test:   npm run test (in frontend/)
+#   typecheck:       npm run typecheck (in frontend/)
+```
+
+## Deployment Checklist
+- [ ] All tests pass
+- [ ] No linter errors
+- [ ] Environment variables documented
+- [ ] Database migrations tested
+- [ ] OpenAPI types synced (frontend matches backend)
+- [ ] Docker images build successfully
+
+## Environment Variables
+- All config via env vars, never hardcode
+- `.env.example` in repo root with all required vars (values empty or placeholder)
+- Actual `.env` in `.gitignore`
+
+## Database Migrations
+- Use Alembic (Python) for schema migrations
+- Always test migration up AND down (rollback)
+- Never edit a migration that's already been applied to production

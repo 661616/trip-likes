@@ -1,0 +1,50 @@
+---
+description: Agent behavior and self-loop workflow rules
+alwaysApply: true
+---
+
+# Agent Workflow Rules
+
+## Core Loop: Plan → Execute → Verify → Report
+
+For every non-trivial task, follow this loop:
+
+### 1. Plan (ALWAYS do this first)
+- Read relevant existing files before making changes
+- If task involves 3+ files: use Plan Mode, output the plan, wait for user approval
+- If task is scoped to 1-2 files: briefly state what you'll do, then proceed
+
+### 2. Execute
+- Make changes in small, reviewable chunks
+- Follow the rules in `.cursor/rules/` for the relevant domain
+- Prefer editing existing files over creating new ones
+
+### 3. Verify (ALWAYS do this after execution)
+- Run linter: `ruff check backend/` or `npm run lint` (frontend)
+- Run type check: `npm run typecheck` (frontend) or `mypy backend/` (if configured)
+- Run relevant tests: `pytest backend/tests/` or `npm run test`
+- If any check fails: fix the issue, re-run the check, repeat until green
+
+### 4. Report
+- Summarize what was done and what was verified
+- If tests or lint fail after 2 attempts, stop and explain the problem to the user
+
+## Context Management
+- Start fresh conversations for each logical work unit
+- Don't accumulate unrelated context — it degrades output quality
+- Use `@File` to reference specific files; don't dump entire directories into context
+- Let search tools find files instead of manually listing them all
+
+## Self-Recovery
+- If a fix attempt makes things worse, `git diff` to see the damage, then `git checkout -- [file]` to revert
+- If stuck in a loop (same error 3+ times), stop and ask the user for direction
+- When reverting, explain what went wrong before trying a different approach
+
+## Skills & MCP Tool Usage
+- When you encounter a task that could benefit from a skill in ~/.cursor/skills/ or ~/.codex/skills/, read the SKILL.md first, then follow its instructions
+- When a task requires an external service (database, API, browser, etc.), check if an MCP tool is available in the project's MCP config
+- Before installing or enabling a new MCP tool:
+  1. Briefly explain what the tool does and why it would help
+  2. Wait for user approval
+  3. Only then proceed with installation/configuration
+- Never auto-install MCP tools or npm packages without user awareness

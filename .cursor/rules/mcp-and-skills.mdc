@@ -1,0 +1,59 @@
+---
+description: Rules for autonomous skill usage and MCP tool management
+alwaysApply: true
+---
+
+# Skills & MCP Self-Management Rules
+
+## Skills: Auto-Discovery, Manual Approval
+
+### When starting a new task category, check for relevant skills:
+1. Read skill files at `~/.cursor/skills/` and `~/.codex/skills/`
+2. If a matching skill exists, read its SKILL.md and follow its workflow
+3. Skills the user has pre-installed are pre-approved — use them directly
+
+### Available skill locations:
+- `~/.codex/skills/.system/` — System skills (slides, spreadsheets, etc.)
+- `~/.cursor/skills-cursor/` — Cursor-specific skills (create-rule, create-skill, update-settings)
+
+## MCP Tools: Check → Propose → Wait for Approval → Use
+
+### Auto-use (no approval needed):
+- MCP tools already configured in the project (check mcps/ folder)
+- Context7 for documentation lookup
+- Exa for web search
+
+### Requires user approval before first use:
+- Installing new MCP servers
+- Enabling new MCP tools not yet in the project config
+- Any MCP tool that makes external API calls with side effects
+
+### Approval request format:
+```
+我发现这个任务可以通过 [MCP工具名] 来提效：
+- 用途：[一句话说明]
+- 为什么需要：[具体原因]
+- 安装方式：[命令]
+是否允许我安装并使用？
+```
+
+### After approval:
+1. Install/configure the tool
+2. Verify it works with a simple test call
+3. Proceed with the task
+4. Document the new tool in project README if it becomes a permanent dependency
+
+## Self-Loop Behavior
+
+### The agent should autonomously:
+1. **Detect lint/test failures** → attempt fix → re-run verification
+2. **Detect missing dependencies** → propose installation → wait for approval if new
+3. **Detect outdated docs** → use Context7 MCP to fetch latest → update approach
+4. **Detect repeated patterns** → suggest extracting into a shared utility
+
+### The agent must STOP and ask the user when:
+1. Architectural decisions are needed (new service, database change, etc.)
+2. A fix attempt has failed 2+ times
+3. The task scope seems larger than initially described
+4. Security-sensitive code is involved (auth, payments, encryption)
+5. A new external dependency (npm package, pip package) needs to be added

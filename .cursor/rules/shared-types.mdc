@@ -1,0 +1,43 @@
+---
+description: Shared types and API contract conventions
+globs: ["shared/**", "frontend/src/lib/api-types.ts", "scripts/sync-api-types.sh"]
+---
+
+# Shared Types & API Contract Rules
+
+## Core Principle
+The backend FastAPI is the **single source of truth** for all API types.
+Frontend TypeScript types are **auto-generated** from the OpenAPI spec.
+
+## Workflow
+1. Backend developer defines Pydantic schemas in `backend/app/schemas/`
+2. FastAPI exposes `/openapi.json` automatically
+3. Run `./scripts/sync-api-types.sh` to generate `frontend/src/lib/api-types.ts`
+4. Frontend imports types from `api-types.ts` — never defines API types manually
+
+## Rules
+- `frontend/src/lib/api-types.ts` is AUTO-GENERATED — NEVER edit by hand
+- If you need to change an API type, change the Pydantic schema in backend first
+- After changing any backend schema, remind the user to run the sync script
+- `shared/types/` may contain non-API types shared between front and back (e.g., enums, constants)
+
+## API Client Pattern
+```typescript
+// frontend/src/lib/api.ts
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export async function apiFetch<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    ...options,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, error.detail || "Unknown error");
+  }
+  return res.json();
+}
+```
