@@ -32,5 +32,9 @@ Thumbs.db
 htmlcov/
 .pytest_cache/
 
+# Local scripts / temp files
+backend/test_api_connection.py
+backend/runtime_settings.json
+
 # Auto-generated (tracked but should not be manually edited)
 # frontend/src/lib/api-types.ts

@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* ── Dark (default) — Tailwind reads these at build time ── */
+@theme {
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-card: #111113;
+  --color-card-foreground: #fafafa;
+  --color-popover: #111113;
+  --color-popover-foreground: #fafafa;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #27272a;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #27272a;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #27272a;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #ef4444;
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-ring: #3b82f6;
+}
+
+/*
+ * Light theme — unlayered rules beat @layer theme,
+ * so these override the @theme defaults at runtime.
+ */
+[data-theme="light"] {
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+  --color-card: #f4f4f5;
+  --color-card-foreground: #09090b;
+  --color-popover: #f4f4f5;
+  --color-popover-foreground: #09090b;
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #e4e4e7;
+  --color-secondary-foreground: #09090b;
+  --color-muted: #e4e4e7;
+  --color-muted-foreground: #71717a;
+  --color-accent: #e4e4e7;
+  --color-accent-foreground: #09090b;
+  --color-destructive: #dc2626;
+  --color-border: #d4d4d8;
+  --color-input: #e4e4e7;
+  --color-ring: #2563eb;
+}
+
+*,
+*::before,
+*::after {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
